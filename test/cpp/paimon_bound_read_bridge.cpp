@@ -95,7 +95,7 @@ struct Descriptor {
 };
 
 struct BridgeBinding {
-	TableFunction function;
+	BoundTableFunction function;
 	unique_ptr<FunctionData> data;
 };
 
@@ -133,23 +133,19 @@ struct BridgeFixture {
 			auto &context = *reader->context;
 			if (entry == 2) {
 				auto &catalog_entry = Catalog::GetEntry<TableCatalogEntry>(context, "pm", "race", table);
-				bound.function = catalog_entry.GetScanFunction(context, bound.data);
+				bound.function = BoundTableFunction(catalog_entry.GetScanFunction(context, bound.data));
 			} else {
 				auto &catalog_entry = Catalog::GetSystemCatalog(context).GetEntry<TableFunctionCatalogEntry>(
 				    context, DEFAULT_SCHEMA, "paimon_scan");
 				auto argument_count = entry == 0 ? 1 : 3;
-				for (idx_t i = 0; i < catalog_entry.functions.Size(); i++) {
-					auto function = catalog_entry.functions.GetFunctionByOffset(i);
-					if (function.arguments.size() == idx_t(argument_count)) {
-						bound.function = function;
-					}
-				}
+				vector<LogicalType> argument_types(argument_count, LogicalType::VARCHAR);
+				bound.function = BoundTableFunction(catalog_entry.functions.GetFunctionByArguments(context, argument_types));
 				REQUIRE(bound.function.bind);
 				vector<Value> args = entry == 0 ? vector<Value> {Value(warehouse + "/race.db/" + table)}
 				                                : vector<Value> {Value(warehouse), Value("race"), Value(table)};
-				named_parameter_map_t parameters;
+				named_argument_map_t parameters;
 				vector<LogicalType> input_types, return_types;
-				vector<string> input_names, names;
+				vector<Identifier> input_names, names;
 				TableFunctionRef ref;
 				TableFunctionBindInput input(args, parameters, input_types, input_names, nullptr, nullptr,
 				                             bound.function, ref);

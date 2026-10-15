@@ -11,9 +11,17 @@ include extension-ci-tools/makefiles/duckdb_extension.Makefile
 
 # Exercise retained bindings alongside SQLLogicTests in local and CI entry points.
 .PHONY: test_snapshot_binding_release test_snapshot_binding_debug test_snapshot_binding_reldebug
-test_release_internal: test_snapshot_binding_release
-test_debug_internal: test_snapshot_binding_debug
-test_reldebug_internal: test_snapshot_binding_reldebug
+ifneq ($(SKIP_TESTS),1)
+test_release: test_snapshot_binding_release
+test_debug: test_snapshot_binding_debug
+test_reldebug: test_snapshot_binding_reldebug
+endif
+
+ifneq ($(strip $(TEST_RUNNER)),)
+override TEST_RUNNER += --test-flags="--require paimon --warn NoTests"
+else
+override T := --require paimon --warn NoTests $(T)
+endif
 
 test_snapshot_binding_release:
 	cmake --build build/release --config Release --target paimon_check_snapshot_binding paimon_check_bound_read_bridge
