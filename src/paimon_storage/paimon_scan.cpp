@@ -1250,7 +1250,9 @@ static void PaimonScan(ClientContext &context, TableFunctionInput &input, DataCh
 	local_state.chunk = current_chunk;
 
 	auto output_size = MinValue<idx_t>(STANDARD_VECTOR_SIZE, NumericCast<idx_t>(c_array->length));
-	output.SetChildCardinality(output_size);
+	DataChunk converted;
+	converted.Initialize(Allocator::Get(context), output.GetTypes());
+	converted.SetChildCardinality(output_size);
 
 	auto &arrow_types = global_state.arrow_table.GetColumns();
 
@@ -1262,13 +1264,16 @@ static void PaimonScan(ClientContext &context, TableFunctionInput &input, DataCh
 		ArrowArrayScanState array_state(context);
 		array_state.owned_data = current_chunk;
 
-		ArrowToDuckDBConversion::SetValidityMask(output.data[col_idx], child_array, 0, output_size,
+		ArrowToDuckDBConversion::SetValidityMask(converted.data[col_idx], child_array, 0, output_size,
 		                                         current_chunk->arrow_array.offset, -1);
-		ArrowToDuckDBConversion::ColumnArrowToDuckDB(output.data[col_idx], child_array, 0, array_state, output_size,
+		ArrowToDuckDBConversion::ColumnArrowToDuckDB(converted.data[col_idx], child_array, 0, array_state, output_size,
 		                                             arrow_type);
 		FlatVector::SetSize(output.data[col_idx], count_t(output_size));
 	}
 
+	// Native roots can be released at the next read or local teardown. Published
+	// vectors must own their data, including nested values and string payloads.
+	converted.Copy(output);
 	output.Verify();
 	return;
 }
