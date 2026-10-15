@@ -50,8 +50,8 @@ optional_ptr<CatalogEntry> PaimonTableSet::BuildEntry(ClientContext &context, co
 	auto &paimon_catalog = catalog.GetPaimonCatalog();
 
 	auto options = PaimonCatalog::GetPaimonOptions(context, catalog.GetPath(), catalog.GetAttachOptions());
-	auto target = PaimonReadTarget::Load(
-	    paimon_catalog, paimon::Identifier(schema.name.GetIdentifierName(), table_name), options);
+	auto target = PaimonReadTarget::Load(paimon_catalog,
+	                                     paimon::Identifier(schema.name.GetIdentifierName(), table_name), options);
 	paimon::Result<std::shared_ptr<paimon::Schema>> table_schema_result =
 	    target.ok() ? paimon::Result<std::shared_ptr<paimon::Schema>>(target.value().schema) : target.status();
 	if (!table_schema_result.ok() && table_schema_result.status().IsNotExist()) {

@@ -234,8 +234,9 @@ if(BUILD_UNITTESTS)
   target_include_directories(unittest_paimon_bridge PRIVATE
     ${CMAKE_SOURCE_DIR}/third_party/catch)
   target_link_libraries(unittest_paimon_bridge duckdb duckdb_yyjson ${CMAKE_DL_LIBS})
+  duckdb_resolve_static_link(PAIMON_TEST_CAPABILITIES PAIMON_TEST_HOST_EXTENSIONS)
   target_compile_definitions(unittest_paimon_bridge PRIVATE
-    PAIMON_BRIDGE_BUILTIN=$<BOOL:${DUCKDB_EXTENSION_PAIMON_SHOULD_LINK}>
+    "PAIMON_BRIDGE_BUILTIN=$<IN_LIST:paimon,${PAIMON_TEST_HOST_EXTENSIONS}>"
     PAIMON_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
     PAIMON_BRIDGE_EXTENSION_PATH="$<TARGET_FILE:${TARGET_NAME}_loadable_extension>")
   add_dependencies(unittest_paimon_bridge ${TARGET_NAME}_loadable_extension)

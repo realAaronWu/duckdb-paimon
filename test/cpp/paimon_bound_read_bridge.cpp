@@ -132,14 +132,16 @@ struct BridgeFixture {
 			BridgeBinding bound;
 			auto &context = *reader->context;
 			if (entry == 2) {
-				auto &catalog_entry = Catalog::GetEntry<TableCatalogEntry>(context, "pm", "race", table);
+				auto &catalog_entry =
+				    Catalog::GetEntry<TableCatalogEntry>(context, QualifiedName("pm", "race", Identifier(table)));
 				bound.function = BoundTableFunction(catalog_entry.GetScanFunction(context, bound.data));
 			} else {
 				auto &catalog_entry = Catalog::GetSystemCatalog(context).GetEntry<TableFunctionCatalogEntry>(
 				    context, DEFAULT_SCHEMA, "paimon_scan");
 				auto argument_count = entry == 0 ? 1 : 3;
 				vector<LogicalType> argument_types(argument_count, LogicalType::VARCHAR);
-				bound.function = BoundTableFunction(catalog_entry.functions.GetFunctionByArguments(context, argument_types));
+				bound.function =
+				    BoundTableFunction(catalog_entry.functions.GetFunctionByArguments(context, argument_types));
 				REQUIRE(bound.function.bind);
 				vector<Value> args = entry == 0 ? vector<Value> {Value(warehouse + "/race.db/" + table)}
 				                                : vector<Value> {Value(warehouse), Value("race"), Value(table)};
@@ -227,8 +229,12 @@ TEST_CASE("Paimon bridge: missing dynamic producer cannot become success", "[pai
 	Connection con(db);
 	auto catalog_absent = [&]() {
 		auto result = con.Query("SELECT count(*) FROM duckdb_functions() WHERE function_name='paimon_scan'");
+		result->Complete();
 		REQUIRE_FALSE(result->HasError());
-		REQUIRE(result->GetValue(0, 0).GetValue<int64_t>() == 0);
+		auto chunk = result->Fetch();
+		REQUIRE(chunk);
+		REQUIRE(chunk->size() == 1);
+		REQUIRE(chunk->GetValue(0, 0).GetValue<int64_t>() == 0);
 	};
 	catalog_absent();
 	auto missing = std::filesystem::path(PAIMON_BRIDGE_EXTENSION_PATH).parent_path() /
