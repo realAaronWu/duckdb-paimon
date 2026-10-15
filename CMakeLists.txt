@@ -285,7 +285,7 @@ if(BUILD_UNITTESTS)
   set_target_properties(unittest_paimon PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                                    "${CMAKE_BINARY_DIR}/test")
   target_link_libraries(unittest_paimon test_helpers duckdb_static
-                        ${EXTENSION_NAME})
+                        ${EXTENSION_NAME} core_functions_extension)
   link_extension_libraries(unittest_paimon "")
   link_threads(unittest_paimon "")
   add_custom_target(
