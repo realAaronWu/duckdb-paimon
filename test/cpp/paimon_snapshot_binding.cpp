@@ -39,6 +39,7 @@
 #include "duckdb/planner/operator/logical_get.hpp"
 
 #include "catch.hpp"
+#include "core_functions_extension.hpp"
 #include "yyjson.hpp"
 
 #include <algorithm>
@@ -287,6 +288,7 @@ struct BindingFixture {
 	const string native_fixtures = PAIMON_NATIVE_FIXTURE_DIR;
 
 	BindingFixture(DBConfig *config = nullptr) : db(nullptr, config), reader(db), writer(db) {
+		db.LoadStaticExtension<CoreFunctionsExtension>();
 		db.LoadStaticExtension<PaimonExtension>();
 		static std::atomic<uint64_t> next_id {0};
 		const auto *root = std::getenv("PAIMON_TEST_ROOT");

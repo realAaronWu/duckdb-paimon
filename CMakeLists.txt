@@ -228,54 +228,72 @@ target_link_libraries(${TARGET_NAME}_loadable_extension ${PAIMON_CPP_LIBS})
 
 if(BUILD_UNITTESTS)
   # Same contracts run on the default built-in host and the DONT_LINK test host.
-  add_executable(unittest_paimon_bridge EXCLUDE_FROM_ALL
+  add_executable(
+    unittest_paimon_bridge EXCLUDE_FROM_ALL
     test/cpp/main.cpp test/cpp/paimon_bound_read_bridge.cpp
     test/cpp/paimon_read_bridge_c.c)
-  target_include_directories(unittest_paimon_bridge PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party/catch)
-  target_link_libraries(unittest_paimon_bridge duckdb duckdb_yyjson ${CMAKE_DL_LIBS})
-  duckdb_resolve_static_link(PAIMON_TEST_CAPABILITIES PAIMON_TEST_HOST_EXTENSIONS)
-  target_compile_definitions(unittest_paimon_bridge PRIVATE
-    "PAIMON_BRIDGE_BUILTIN=$<IN_LIST:paimon,${PAIMON_TEST_HOST_EXTENSIONS}>"
-    PAIMON_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
-    PAIMON_BRIDGE_EXTENSION_PATH="$<TARGET_FILE:${TARGET_NAME}_loadable_extension>")
+  target_include_directories(unittest_paimon_bridge
+                             PRIVATE ${CMAKE_SOURCE_DIR}/third_party/catch)
+  target_link_libraries(unittest_paimon_bridge duckdb duckdb_yyjson
+                        ${CMAKE_DL_LIBS})
+  duckdb_resolve_static_link(PAIMON_TEST_CAPABILITIES
+                             PAIMON_TEST_HOST_EXTENSIONS)
+  target_compile_definitions(
+    unittest_paimon_bridge
+    PRIVATE
+      "PAIMON_BRIDGE_BUILTIN=$<IN_LIST:paimon,${PAIMON_TEST_HOST_EXTENSIONS}>"
+      PAIMON_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
+      PAIMON_BRIDGE_EXTENSION_PATH="$<TARGET_FILE:${TARGET_NAME}_loadable_extension>"
+  )
   add_dependencies(unittest_paimon_bridge ${TARGET_NAME}_loadable_extension)
-  set_target_properties(unittest_paimon_bridge PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test")
-  add_custom_target(paimon_check_bound_read_bridge
-    COMMAND ${CMAKE_COMMAND} "-DTEST_BINARY=$<TARGET_FILE:unittest_paimon_bridge>"
+  set_target_properties(
+    unittest_paimon_bridge PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                      "${CMAKE_BINARY_DIR}/test")
+  add_custom_target(
+    paimon_check_bound_read_bridge
+    COMMAND
+      ${CMAKE_COMMAND} "-DTEST_BINARY=$<TARGET_FILE:unittest_paimon_bridge>"
       "-DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/bridge-test-work" -P
       "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp/run_snapshot_binding.cmake"
-    DEPENDS unittest_paimon_bridge USES_TERMINAL)
-  add_executable(unittest_paimon EXCLUDE_FROM_ALL test/cpp/main.cpp
-                 test/cpp/paimon_native_reader.cpp
-                 test/cpp/paimon_read_target.cpp
-                 test/cpp/paimon_snapshot_binding.cpp
-                 test/cpp/paimon_snapshot_resolver.cpp)
-  target_compile_definitions(unittest_paimon PRIVATE ${PAIMON_FEATURE_DEFINITIONS})
+    DEPENDS unittest_paimon_bridge
+    USES_TERMINAL)
+  add_executable(
+    unittest_paimon EXCLUDE_FROM_ALL
+    test/cpp/main.cpp test/cpp/paimon_native_reader.cpp
+    test/cpp/paimon_read_target.cpp test/cpp/paimon_snapshot_binding.cpp
+    test/cpp/paimon_snapshot_resolver.cpp)
+  target_compile_definitions(unittest_paimon
+                             PRIVATE ${PAIMON_FEATURE_DEFINITIONS})
   if(PAIMON_ENABLE_REST)
     target_sources(unittest_paimon PRIVATE test/cpp/paimon_rest_branch.cpp)
-    target_include_directories(unittest_paimon SYSTEM PRIVATE
-                               ${CMAKE_SOURCE_DIR}/third_party/httplib)
+    target_include_directories(unittest_paimon SYSTEM
+                               PRIVATE ${CMAKE_SOURCE_DIR}/third_party/httplib)
   endif()
-  target_include_directories(unittest_paimon PRIVATE
-                             ${CMAKE_SOURCE_DIR}/third_party/catch
-                             ${CMAKE_SOURCE_DIR}/test/include)
-  target_include_directories(unittest_paimon SYSTEM PRIVATE ${PAIMON_CPP_INCLUDE})
-  target_compile_definitions(unittest_paimon PRIVATE
-    PAIMON_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
-    PAIMON_SCHEMA_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/cpp/fixtures"
-    PAIMON_NATIVE_FIXTURE_DIR="${PAIMON_CPP_SOURCE_DIR}/test/test_data")
-  set_target_properties(unittest_paimon PROPERTIES
-                        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test")
-  target_link_libraries(unittest_paimon test_helpers duckdb_static ${EXTENSION_NAME})
+  target_include_directories(
+    unittest_paimon
+    PRIVATE ${CMAKE_SOURCE_DIR}/third_party/catch
+            ${CMAKE_SOURCE_DIR}/test/include
+            ${CMAKE_SOURCE_DIR}/extension/core_functions/include)
+  target_include_directories(unittest_paimon SYSTEM
+                             PRIVATE ${PAIMON_CPP_INCLUDE})
+  target_compile_definitions(
+    unittest_paimon
+    PRIVATE
+      PAIMON_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
+      PAIMON_SCHEMA_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/cpp/fixtures"
+      PAIMON_NATIVE_FIXTURE_DIR="${PAIMON_CPP_SOURCE_DIR}/test/test_data")
+  set_target_properties(unittest_paimon PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                                   "${CMAKE_BINARY_DIR}/test")
+  target_link_libraries(unittest_paimon test_helpers duckdb_static
+                        ${EXTENSION_NAME})
   link_extension_libraries(unittest_paimon "")
   link_threads(unittest_paimon "")
-  add_custom_target(paimon_check_snapshot_binding
-    COMMAND ${CMAKE_COMMAND}
-      "-DTEST_BINARY=$<TARGET_FILE:unittest_paimon>"
-      "-DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/binding-test-work"
-      -P "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp/run_snapshot_binding.cmake"
+  add_custom_target(
+    paimon_check_snapshot_binding
+    COMMAND
+      ${CMAKE_COMMAND} "-DTEST_BINARY=$<TARGET_FILE:unittest_paimon>"
+      "-DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/binding-test-work" -P
+      "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp/run_snapshot_binding.cmake"
     DEPENDS unittest_paimon
     USES_TERMINAL)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -297,9 +315,10 @@ if(BUILD_UNITTESTS)
                           duckdb_static ${EXTENSION_NAME})
     link_extension_libraries(unittest_paimon_schema_release "")
     link_threads(unittest_paimon_schema_release "")
-    target_link_options(unittest_paimon_schema_release PRIVATE
-                        "LINKER:--wrap=${PAIMON_SCHEMA_POPULATE_SYMBOL}"
-                        "LINKER:--wrap=_ZdlPv" "LINKER:--wrap=_ZdlPvm")
+    target_link_options(
+      unittest_paimon_schema_release PRIVATE
+      "LINKER:--wrap=${PAIMON_SCHEMA_POPULATE_SYMBOL}" "LINKER:--wrap=_ZdlPv"
+      "LINKER:--wrap=_ZdlPvm")
     add_custom_target(
       paimon_check_schema_release
       COMMAND
