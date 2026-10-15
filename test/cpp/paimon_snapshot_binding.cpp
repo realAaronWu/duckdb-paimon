@@ -117,10 +117,12 @@ static idx_t Count(Connection &reader, BoundScan &bound) {
 using Rows = vector<vector<Value>>;
 
 static void RequireNoArrowOwner(Vector &column) {
-	auto buffer = column.GetBuffer();
+	auto buffer = column.GetBufferRef();
 	REQUIRE(buffer);
-	auto *auxiliary = buffer->GetAuxiliaryData();
-	REQUIRE((!auxiliary || auxiliary->type != VectorAuxiliaryDataType::ARROW_AUXILIARY));
+	const auto &auxiliary = buffer->GetAuxiliaryData();
+	// At this host pin the primitive INTEGER's native borrow is an auxiliary
+	// holder, while its fresh copied buffer has no auxiliary holders.
+	REQUIRE((!auxiliary || auxiliary->data.empty()));
 }
 
 static Rows Read(Connection &reader, BoundScan &bound, bool partial = false) {
