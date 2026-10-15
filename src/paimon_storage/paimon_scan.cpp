@@ -1231,6 +1231,9 @@ static unique_ptr<LocalTableFunctionState> PaimonScanInitLocal(ExecutionContext 
 }
 
 static void PaimonScan(ClientContext &context, TableFunctionInput &input, DataChunk &output) {
+	// Reset can leave cached child sizes on this host; publish no logical rows
+	// until conversion and copying have both completed.
+	output.SetCardinalityUnsafe(0);
 	auto &global_state = input.global_state->Cast<PaimonScanGlobalState>();
 	auto &local_state = input.local_state->Cast<PaimonScanLocalState>();
 	auto current_chunk = make_shared_ptr<ArrowArrayWrapper>();
@@ -1277,6 +1280,8 @@ static void PaimonScan(ClientContext &context, TableFunctionInput &input, DataCh
 	DataChunk owned;
 	owned.Initialize(Allocator::Get(context), output_types);
 	converted.Copy(owned);
+	// Copy derives size from children; an empty projection has no child carrier.
+	owned.SetChildCardinality(output_size);
 	owned.Verify();
 	output.Reference(owned);
 	return;
