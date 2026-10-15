@@ -1272,7 +1272,6 @@ static void PaimonScan(ClientContext &context, TableFunctionInput &input, DataCh
 		                                         current_chunk->arrow_array.offset, -1);
 		ArrowToDuckDBConversion::ColumnArrowToDuckDB(converted.data[col_idx], child_array, 0, array_state, output_size,
 		                                             arrow_type);
-		FlatVector::SetSize(output.data[col_idx], count_t(output_size));
 	}
 
 	// Never publish the reusable output caches: Reset would overwrite retained
