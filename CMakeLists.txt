@@ -247,6 +247,7 @@ if(BUILD_UNITTESTS)
       "${CMAKE_CURRENT_SOURCE_DIR}/test/cpp/run_snapshot_binding.cmake"
     DEPENDS unittest_paimon_bridge USES_TERMINAL)
   add_executable(unittest_paimon EXCLUDE_FROM_ALL test/cpp/main.cpp
+                 test/cpp/paimon_native_reader.cpp
                  test/cpp/paimon_read_target.cpp
                  test/cpp/paimon_snapshot_binding.cpp
                  test/cpp/paimon_snapshot_resolver.cpp)
