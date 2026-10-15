@@ -33,6 +33,7 @@ namespace duckdb {
 
 class PaimonTableEntry : public TableCatalogEntry {
 public:
+	string schema_signature;
 	PaimonTableEntry(Catalog &catalog, SchemaCatalogEntry &schema, CreateTableInfo &info);
 
 	const ColumnList &GetColumns() const override;
